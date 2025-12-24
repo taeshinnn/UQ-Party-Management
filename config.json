@@ -1,0 +1,9 @@
+{
+  "log_file_path": "mock_game.log",
+  "server_port": 5000,
+  "party_size": 4,
+  "parties_needed": 2,
+  "auto_open_browser": true,
+  "sound_notification": true
+}
+
