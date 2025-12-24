@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UQ Party Queue Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 UQ Party Queue Manager</h1>
+            <p class="subtitle">Organize your quest parties automatically</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Add Players Section -->
+            <section class="add-section">
+                <h2>Add Players</h2>
+                <div class="add-controls">
+                    <input type="text" id="playerName" placeholder="Enter player name..." />
+                    <button onclick="addPlayer()" class="btn btn-primary">Add +1</button>
+                    <button onclick="addMultiple(2)" class="btn btn-secondary">+2</button>
+                    <button onclick="addMultiple(3)" class="btn btn-secondary">+3</button>
+                </div>
+                <div class="add-multiple">
+                    <textarea id="multipleNames" placeholder="Or paste multiple names (one per line or comma-separated)"></textarea>
+                    <button onclick="addMultipleFromText()" class="btn btn-primary">Add All</button>
+                </div>
+            </section>
+
+            <!-- Queue Status Section -->
+            <section class="queue-section">
+                <div class="queue-header">
+                    <h2>Current Queue</h2>
+                    <div class="queue-count">
+                        <span id="queueCount">0</span>/<span id="maxPlayers">8</span> players
+                    </div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                    <span id="progressText" class="progress-text">0%</span>
+                </div>
+
+                <div id="queueList" class="queue-list">
+                    <p class="empty-message">No players in queue yet</p>
+                </div>
+
+                <div class="queue-actions">
+                    <button onclick="clearQueue()" class="btn btn-danger">Clear Queue</button>
+                </div>
+            </section>
+
+            <!-- Parties Section -->
+            <section id="partiesSection" class="parties-section" style="display: none;">
+                <h2>🎉 Quest Group Ready!</h2>
+                <div id="partiesContainer" class="parties-container"></div>
+                <div class="party-actions">
+                    <button onclick="copyParties()" class="btn btn-primary">📋 Copy to Clipboard</button>
+                    <button onclick="finalizeParties()" class="btn btn-success">✅ Start New Queue</button>
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section class="history-section">
+                <h2>Recent Parties</h2>
+                <div id="historyList" class="history-list">
+                    <p class="empty-message">No party history yet</p>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <div class="status" id="status">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </footer>
+    </div>
+
+    <audio id="notificationSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBi6H0fPTgjMGHm7A7+OZUQ4RWK7o7adXFApLpOPxwW4fBzeO1PLPfS0GKoLM8tqTQAoXY7rv7J1QEA1Sp+Xxw3IgBzOI0/PMgC4HImvB8OCYUREPWa/n77RaFAtPp+Xxx24gBzaO1/PQgTAGKoHM8tuUQQoXY7vs7ZxREA5Rq+TwxW8jCTaM1fHMhTAGJnLB79+cUBEQXbHo77NaFApNqOTuwXEgCDSL1PDNiDEFJG/A8N6aURAOV6/l8cNwIgg2j9bwz4o0ByhzwvDdmU8REljC6PG3aBYJS6Hn88V+KQk3jtXw0Yk2BidywfDemlQQD1ex5u+0aBYJS6Ln88Z/KQo3kdTw0Ys3BSl0wvDem1UQEFiz5+61axYKS6Ln88d/KQo3ktXw0Iw4BSp0w+/dn1YQEVK36O+2bBcKS6Ln88d+KQo2k9Xw0I07Bip0w+/doFURElK36O+2bBcKS6Pn88d+KQs2ktXw0I06Bip1w+/coFYQElW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYREVW36O+2bRcKS6Pn88d+KQs2ktXw0I07Bip1w+/coFYR" type="audio/wav">
+    </audio>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
